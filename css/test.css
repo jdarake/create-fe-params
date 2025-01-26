@@ -1,0 +1,8 @@
+.animeStar{
+	width: 20px;
+	height:20px;
+	background: url('../data/star2.gif');
+	background-size: cover;
+	margin-top:200px;
+	margin-left: 200px;
+}

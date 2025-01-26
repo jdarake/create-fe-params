@@ -1,0 +1,251 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+	<meta charset="utf-8">
+	<title>FE風ユニット自動生成</title>
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<script src="js/jquery-3.3.1.js"></script>
+	<script src="js/anime.min.js"></script>
+	<script src="js/popper.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<link href="css/loading.css" rel="stylesheet">
+	<link href="css/main.css" rel="stylesheet">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=0.7, minimum-scale=0.7, user-scalable=yes">
+</head>
+<body>
+	<main>
+		<div id="header">
+			<h1>あなたがもしFEのユニットだったら</h1>
+		</div>
+		<div id="contents">
+			<div id="ques" v-cloak>
+				<form id="formID" role="form" data-toggle="validator" onsubmit="return false">
+					<div v-show="isQues">
+					
+						<span hidden>{{maxList}}</span>
+						
+						<h2>あなたの性格からFEパラメータを生成します</h2>
+						<p>
+							質問事項にお答えいただき、「結果表示」ボタンを押していただくと、あなたのパラメータが生成されます。<br>
+							なお、パラメータ上限やクラスについてはGBA作品を準拠しています。
+						</p>
+						<span class="text-muted">？ボタンを押すとヘルプが見れます。</span>
+						
+						<h3>あなたのお名前</h3>
+						<input type="text" class="validate[required]" v-model="name">
+						<button type="button" class="btn btn-info rounded-circle p-0" style="width:2rem;height:2rem;"  data-toggle="popover" data-content="パラメータに影響しないので、好きなお名前を入れてください。" data-placement="top">？</button>
+						
+						<h3>あなたの性別</h3>
+						<div  class="select">
+							<select data-validation-engine="validate[required]" v-model="selectsex">
+								<option value="">--選択してください--</option>
+								<option v-for="sex in sexs" v-bind:value="sex.sex">{{sex.sex}}</option>
+							</select>
+						</div>
+						<button type="button" class="btn btn-info rounded-circle p-0" style="width:2rem;height:2rem;"  data-toggle="popover" data-content="パラメータに若干の影響があります。" data-placement="top">？</button>
+						
+						<h3>あなたの身長</h3>
+						<div  class="select">
+							<select data-validation-engine="validate[required]" v-model="selectheight">
+								<option value="">--選択してください--</option>
+								<option value="0">0～140cm</option>
+								<option value="0">140～150cm</option>
+								<option value="1">150～170cm</option>
+								<option value="2">170～190cm</option>
+								<option value="3">190cm～</option>
+							</select>
+						</div>
+						<button type="button" class="btn btn-info rounded-circle p-0" style="width:2rem;height:2rem;"  data-toggle="popover" data-content="体格に影響があります。" data-placement="top">？</button>
+						
+						<h3>あなたの体重</h3>
+						<div  class="select">
+							<select data-validation-engine="validate[required]" v-model="selectweight">
+								<option value="">--選択してください--</option>
+								<option value="0">0～50kg</option>
+								<option value="0">50～60kg</option>
+								<option value="1">60～80kg</option>
+								<option value="2">80～100kg</option>
+								<option value="3">100kg～</option>
+								<option value="0">ヒ・ミ・ツ</option>
+							</select>
+						</div>
+						<button type="button" class="btn btn-info rounded-circle p-0" style="width:2rem;height:2rem;"  data-toggle="popover" data-content="体格に影響があります。" data-placement="top">？</button>
+						
+						
+						<h3>希望のクラス</h3>
+						<div  class="select">
+							<select data-validation-engine="validate[required]" v-model="selected">
+								<option value="">--選択してください--</option>
+								<option v-for="option in options" v-bind:value="option.job">{{option.job}}</option>
+							</select>
+						</div>
+						<button type="button" class="btn btn-info rounded-circle p-0" style="width:2rem;height:2rem;"  data-toggle="popover" data-content="希望に沿ったクラスになり、初期パラメータに影響します。" data-placement="top">？</button>
+						
+						<h3>以下、質問にお答えください</h3>
+						
+						<div class="columns" v-for="(ques, index) in quesLists">
+							<p>({{index + 1}}) {{ques.ques}}</p>
+							<div class="quesContents cp_ipradio" v-for="ans in ques.ansList">
+								<ul class="radios">
+									<li>
+										<input type="radio" v-bind:name="index" v-bind:value="quesLists" v-on:change="radioChange(index, ans.id)">
+										<label for="">{{ans.ans}}</label>
+									</li>
+								</ul>
+							</div>
+						</div>
+					
+						<h3>最後に、あなたを象徴する画像を選択してください</h3>
+						<input type="file" v-on:change="onFileChange">
+						<button type="button" class="btn btn-info rounded-circle p-0" style="width:2rem;height:2rem;"  data-toggle="popover" data-content="選択せずともパラメータには影響しません。" data-placement="top">？</button>
+						
+						<h3>以下のボタンを押下し、結果を見て見ましょう</h3>
+						<button type="button" class="btn btn-primary btn-lg btn-block " v-on:click="resultFunc">結果表示</button>
+						
+					</div>
+				</form>
+				<div v-show="isLoading" class="loader">解析中…</div>
+				
+			</div>
+		</div>
+		
+		<div id="resultArea">
+			<div v-show="isResult" v-cloak>
+				<transition name="fade">
+					<div v-show="isLevelUp" class="levelup"></div>
+				</transition>
+				<div class="row">
+					<div class="col-sm-2">
+						<div v-if="!uploadedImage == ''" class="imageArea center-block">
+							<img v-show="uploadedImage" v-bind:src="uploadedImage" />
+						</div>
+					</div>
+					<div class="col-sm-10 d-flex align-items-end">
+						<div class="nameArea">{{name}}</div>
+					</div>
+				</div>
+				<div class="paramArea">
+					<table class="table">
+						<tr>
+							<td colspan="2" class="success">{{selected}}</td>
+							<td colspan="1" class="success text-right">レベル</td>
+							<td colspan="1" class="parent">
+								<div id="lv">
+									<progress class="lifeBar" v-bind:value="resultParam.lv" v-bind:max="maxParam.lv" min="0" optimum="100"></progress>
+									<div v-bind:class="{ paramMax: resultParam.lv >= maxParam.lv }" class="param text-center" id="lv">{{resultParam.lv}}</div>
+								</div>
+							</td>
+						</tr>
+					</table>
+					<table class="table table-bordered">
+						<tr>
+							<td class="success">HP</td>
+							<td id="hpSell" class="parent widhtRarge">
+								<progress class="lifeBar" v-bind:value="resultParam.hp" v-bind:max="maxParam.hp" min="0" optimum="100"></progress>
+								<div id="hp" class="flexParant">
+									<div v-bind:class="{ paramMax: resultParam.hp >= maxParam.hp }" class="param text-center">{{resultParam.hp}}</div>
+									<div class="grow text-muted small text-right">{{paramGrow.hp}}%</div>
+									<div v-show="isUPhp" class="strong upParam"><b>＋{{upParamValue.hp}}</b></div>
+								</div>
+							</td>
+							<td class="success">幸運</td>
+							<td class="parent widhtRarge">
+								<progress class="lifeBar" v-bind:style="{width: progWidht.luk + '%' }" v-bind:value="resultParam.luk" v-bind:max="maxParam.luk" min="0" optimum="100"></progress>
+								<div id="luk" class="flexParant">
+									<div v-bind:class="{ paramMax: resultParam.luk >= maxParam.luk }" class="param text-center">{{resultParam.luk}}</div>
+									<div class="grow text-muted small text-right">{{paramGrow.luk}}%</div>
+									<div v-show="isUPluk" class="strong upParam"><b>＋{{upParamValue.luk}}</b></div>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td class="success" style="font-size: 0.8em;">力(魔力)</td>
+							<td class="parent">
+								<progress class="lifeBar" v-bind:style="{width: progWidht.str + '%' }" v-bind:value="resultParam.str" v-bind:max="maxParam.str" min="0" optimum="100"></progress>
+								<div id="str" class="flexParant">
+									<div v-bind:class="{ paramMax: resultParam.str >= maxParam.str }" class="param text-center">{{resultParam.str}}</div>
+									<div class="grow text-muted small text-right">{{paramGrow.str}}%</div>
+									<div v-show="isUPstr" class="strong upParam"><b>＋{{upParamValue.str}}</b></div>
+								</div>
+							</td>
+							<td class="success">守備</td>
+							<td class="parent">
+								<progress class="lifeBar" v-bind:style="{width: progWidht.def + '%' }" v-bind:value="resultParam.def" v-bind:max="maxParam.def" min="0" optimum="100"></progress>
+								<div id="def" class="flexParant">
+									<div v-bind:class="{ paramMax: resultParam.def >= maxParam.def }" class="param text-center">{{resultParam.def}}</div>
+									<div class="grow text-muted small text-right">{{paramGrow.def}}%</div>
+									<div v-show="isUPdef" class="strong upParam"><b>＋{{upParamValue.def}}</b></div>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td class="success">技</td>
+							<td class="parent">
+								<progress class="lifeBar" v-bind:style="{width: progWidht.ski + '%' }" v-bind:value="resultParam.ski" v-bind:max="maxParam.ski" min="0" optimum="100"></progress>
+								<div id="ski" class="flexParant">
+									<div v-bind:class="{ paramMax: resultParam.ski >= maxParam.ski }" class="param text-center">{{resultParam.ski}}</div>
+									<div class="grow text-muted small text-right">{{paramGrow.ski}}%</div>
+									<div v-show="isUPski" class="strong upParam"><b>＋{{upParamValue.ski}}</b></div>
+								</div>
+							</td>
+							<td class="success">魔防</td>
+							<td class="parent">
+								<progress class="lifeBar" v-bind:style="{width: progWidht.mag + '%' }" v-bind:value="resultParam.mag" v-bind:max="maxParam.mag" min="0" optimum="100"></progress>
+								<div id="mag" class="flexParant">
+									<div v-bind:class="{ paramMax: resultParam.mag >= maxParam.mag }" class="param text-center">{{resultParam.mag}}</div>
+									<div class="grow text-muted small text-right">{{paramGrow.mag}}%</div>
+									<div v-show="isUPmag" class="strong upParam"><b>＋{{upParamValue.mag}}</b></div>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td class="success">速さ</td>
+							<td class="parent">
+								<progress class="lifeBar" v-bind:style="{width: progWidht.agi + '%' }" v-bind:value="resultParam.agi" v-bind:max="maxParam.agi" min="0" optimum="100"></progress>
+								<div id="agi" class="flexParant">
+									<div v-bind:class="{ paramMax: resultParam.agi >= maxParam.agi }" class="param text-center">{{resultParam.agi}}</div>
+									<div class="grow text-muted small text-right">{{paramGrow.agi}}%</div>
+									<div v-show="isUPagi" class="strong upParam"><b>＋{{upParamValue.agi}}</b></div>
+								</div>
+							</td>
+							<td class="success">体格</td>
+							<td class="parent">
+								<progress class="lifeBar" v-bind:style="{width: progWidht.bod + '%' }" v-bind:value="resultParam.bod" v-bind:max="maxParam.bod" min="0" optimum="100"></progress>
+								<div id="bod">
+									<div v-bind:class="{ paramMax: resultParam.bod >= maxParam.bod }" class="param text-center">{{resultParam.bod}}</div>
+									<div v-show="isUPbod" class="strong upParam"><b>＋{{upParamValue.bod}}</b></div>
+								</div>
+							</td>
+						</tr>
+					</table>
+				</div>
+				
+				<button type="button" v-bind:disabled="isUpBtn" class="btn btn-success btn-lg" v-on:click="levelUpFunc">レベルアップ</button>
+				
+			</div>
+			<div class="headerArea" v-show="isResult" v-cloak>
+				<div class="text-muted">スクショ撮ってSNSで自慢しようや…<button type="button" class="btn btn-info rounded-circle p-0" style="width:2rem;height:2rem;"  data-toggle="popover" data-content="手間で申し訳ないです。本画面をスクショして適宜画像を共有してください。" data-placement="top">？</button></div>
+				<div class="row">
+					<div class="col-sm-8">
+						<textarea rows="2" id="copyTarget" readonly>http://instant-create.fun/public/make/ #私がFEユニット化したら </textarea>
+					</div>
+					<div class="col-sm-4">
+						<button type="button" class="btn btn-warning" onclick="copyToClipboard()">←クリップボードにコピー</button>
+					</div>
+				</div>
+				<br>
+				<a href="https://instant-create.fun/blog/"><img src="data/myface.jpg" alt="作者のブログ" width="200px" height="200px" border="0">https://instant-create.fun/blog/</a>
+				<br>
+				<p>↑作者のブログ</p>
+			</div>
+		</div>
+		
+	</main>
+	
+	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+	<script src="js/main.js"></script>
+	
+	
+</body>
+</html>
